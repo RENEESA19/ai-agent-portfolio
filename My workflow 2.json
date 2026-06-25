@@ -1,0 +1,390 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -304,
+        -16
+      ],
+      "id": "b1c117b5-92f8-4dd2-b328-16e92001c7bc",
+      "name": "When chat message received",
+      "webhookId": "e58aa0d0-0f31-44ce-b7f2-76f6932ca44c"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "16UjQinJ3AzVcVRYC_iTbO2MrsdDS1bIFEkH7c6c18AQ"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 96729737,
+          "mode": "list",
+          "cachedResultName": "Team Members",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/16UjQinJ3AzVcVRYC_iTbO2MrsdDS1bIFEkH7c6c18AQ/edit#gid=96729737"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -96,
+        -16
+      ],
+      "id": "bc7ac61d-2bc4-4fdb-b502-5dd7a042cf80",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "JsoVukpcUa7r0J10",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        112,
+        -16
+      ],
+      "id": "a05d6f0d-ce39-41d8-85cf-3d9e404932fb",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a Project Planning Agent. Your job is to break a project request into a clear, ordered set of milestones and return them as structured data that maps exactly to a task-tracking spreadsheet.\n\n \n\n## INPUTS\n\nYou receive:\n\n1. A project request from chat describing what needs to be p{{ $('When chat message received').item.json.chatInput }}lanned (goal, scope, any constraints, deadlines).\n\n3. CURRENT_TIMESTAMP: {{ $now }}\n\n4. AVAILABLE_EMPLOYEES (assign owners ONLY from this list):\n\n{{ JSON.stringify($data, null, 2) }}\n\n \n\n   Each employee has: Employee_ID, Employee_Name, Email, Role, Department, Manager, Location.\nternship | Masterclass -2 |No-Code AI Agent Lab\n\n## FIELD RULES\n\n- Project_id: use PROJECT_ID for every row.\n\n- Project_name: use PROJECT_NAME for every row.\n\n- Milestones: a short title (3–8 words).\n\n- Description: 1–2 sentences, outcome-focused.\n\n- Owner: must exactly match an Employee_Name from AVAILABLE_EMPLOYEES. Never invent a name.\n\n- Start_date / End_date: ISO 8601 date format (YYYY-MM-DD). End_date must be on or after Start_date.\n\n- Status: always \"Not Started\" for newly planned milestones.\n\n- Priority: one of \"Low\", \"Medium\", \"High\", \"Critical\" based on impact and urgency.\n\n- Progress_percentage: always 0 for new milestones.\n\n- Created_at / Updated_at: set both to CURRENT_TIMESTAMP (ISO 8601).\n\n \n\n## CONSTRAINTS\n\n- Do not assign an owner who is not in AVAILABLE_EMPLOYEES.\n\n- Do not add commentary, explanations, or markdown. Return only the structured object defined by the output schema.\n\n- Every milestone object must contain all fields, with no nulls.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        320,
+        -16
+      ],
+      "id": "1e731d31-1da7-4aeb-8f62-b900fb9996cb",
+      "name": "Plannner Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        192,
+        192
+      ],
+      "id": "a823fa4d-4037-4300-9bc9-2d6851bf7dc6",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "7XWMSf8AnqXzno4d",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\n  \"milestones\": [\n\n    {\n\n      \"Project_id\": \"KIS-001\",\n\n      \"Project_name\": \"Kisaniyat\",\n\n      \"Milestones\": \"Market research and farmer needs analysis\",\n\n      \"Description\": \"Survey target farmers to identify which government schemes they struggle to access and why. Done when a prioritized list of scheme categories and pain points is documented.\",\n\n      \"Owner\": \"Yash Patel\",\n\n      \"Start_date\": \"2026-06-20\",\n\n      \"End_date\": \"2026-07-04\",\n\n      \"Status\": \"Not Started\",\n\n      \"Priority\": \"High\",\n\n      \"Progress_percentage\": 0,\n\n      \"Created_at\": \"2026-06-18T19:11:45.055+05:30\",\n\n      \"Updated_at\": \"2026-06-18T19:11:45.055+05:30\"\n\n    },\n\n{\n\n      \"Project_id\": \"KIS-001\",\n\n      \"Project_name\": \"Kisaniyat\",\n\n      \"Milestones\": \"Content strategy for scheme awareness\",\n\n      \"Description\": \"Define the messaging, channels, and content calendar for educating farmers about relevant schemes. Done when an approved content plan covering blogs and social media exists.\",\n\n      \"Owner\": \"Devansh Jain\",\n\n      \"Start_date\": \"2026-07-05\",\n\n      \"End_date\": \"2026-07-20\",\n\n      \"Status\": \"Not Started\",\n\n      \"Priority\": \"Medium\",\n\n      \"Progress_percentage\": 0,\n\n      \"Created_at\": \"2026-06-18T19:11:45.055+05:30\",\n\n      \"Updated_at\": \"2026-06-18T19:11:45.055+05:30\"\n\n    }\n\n  ]\n\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        496,
+        192
+      ],
+      "id": "e7ce2ae1-c112-4ecc-a12a-7ec1b45bdbeb",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.milestones",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        672,
+        16
+      ],
+      "id": "0b7cae14-96aa-4469-8abe-7397f37aadcd",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "16UjQinJ3AzVcVRYC_iTbO2MrsdDS1bIFEkH7c6c18AQ",
+          "mode": "list",
+          "cachedResultName": "RENEESA _ task tracker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/16UjQinJ3AzVcVRYC_iTbO2MrsdDS1bIFEkH7c6c18AQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Project Plan",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/16UjQinJ3AzVcVRYC_iTbO2MrsdDS1bIFEkH7c6c18AQ/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Project_id": "={{ $json.Project_id }}",
+            "Project_name": "={{ $json.Project_name }}",
+            "Milestones": "={{ $json.Milestones }}",
+            "Owner": "={{ $json.Owner }}",
+            "Description": "={{ $json.Description }}",
+            "Start_date": "={{ $json.Start_date }}",
+            "End_date": "={{ $js$json.End_dateon.End_date }}",
+            "Status": "={{ $json.Status }}",
+            "Created_at": "={{ $json.Created_at }}",
+            "Updated_at": "={{ $json.Updated_at }}",
+            "Progress_percentage": "={{ $json.Progress_percentage }}",
+            "Priority": "={{ $json.Priority }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Project_id",
+              "displayName": "Project_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Project_name",
+              "displayName": "Project_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Milestones",
+              "displayName": "Milestones",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Owner",
+              "displayName": "Owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Start_date",
+              "displayName": "Start_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "End_date",
+              "displayName": "End_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Progress_percentage",
+              "displayName": "Progress_percentage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Created_at",
+              "displayName": "Created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Updated_at",
+              "displayName": "Updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        880,
+        16
+      ],
+      "id": "5df3f636-e7a1-4a35-9ad6-f36c5c509251",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "JsoVukpcUa7r0J10",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Plannner Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Plannner Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Plannner Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plannner Agent": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "3711aea0-c553-4acb-9f3b-de900979e97f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "af555b013b445aff3a87a3f53041a4f3ed4eca7aa1ae5dad0206611ee4ddc1a3"
+  },
+  "nodeGroups": [],
+  "id": "flzLuNCbHw0UeTS5",
+  "tags": []
+}
